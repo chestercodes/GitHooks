@@ -1,0 +1,5 @@
+Merge remote-tracking branch 'origin/feature/ABC1-234' into develop
+
+Conflicts:
+	Samples/Some.xml
+	Samples/File.xml
