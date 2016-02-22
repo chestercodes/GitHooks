@@ -1,0 +1,3 @@
+#!/bin/sh
+
+powershell -NoProfile -File "GitHooks\CommitMessageReplace.ps1" "$1"
