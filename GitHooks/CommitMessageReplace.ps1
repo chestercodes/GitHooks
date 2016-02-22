@@ -1,60 +1,56 @@
-param([string] $commitFile=$null)
+param([string] $commitFile)
 
-cd C:\Dev\
+$messageFileContent = Get-Content ($commitFile)
 
-function com
-{
-    param([string]$commitFile)
-
-    $messageFileContent = Get-Content ($commitFile)
-
-    $jiraItemRegex = "^feature\/[A-Za-z0-9]+(\-|_)\d+"
-    $currentBranch = git rev-parse --abbrev-ref HEAD
+$jiraItemRegex = "^feature\/[A-Za-z0-9]+(\-|_)\d+"
+$currentBranch = git rev-parse --abbrev-ref HEAD
     
-    # Only do things if is a feature branch
-    if($currentBranch -match $jiraItemRegex)
+# Only do things if is a feature branch
+if($currentBranch -match $jiraItemRegex)
+{
+    Write-Host "Matches JIRA feature branch"
+    $jiraItem = $Matches[0].Replace("feature/", "")
+    $isOneLine = $messageFileContent -is [String]
+    
+    # Check isn't merge commit
+    if($isOneLine){
+        Write-Host "Is one line message"
+        $firstLine = $messageFileContent 
+    } else { 
+        Write-Host "Is multiple line message"
+        $firstLine = $messageFileContent[0] 
+    }
+        
+    if($firstLine.StartsWith("Merge"))
     {
-        $jiraItem = $Matches[0].Replace("feature/", "")
-        $isOneLine = $messageFileContent -is [String]
-        
-        # Check isn't merge commit
-        if($isOneLine){ 
-            $firstLine = $messageFileContent 
-        } else { 
-            $firstLine = $messageFileContent[0] 
-        }
-        
-        if($firstLine.StartsWith("Merge"))
-        {
-            return
-        }
+        Write-Host "First line starts with Merge, returning"
+        return
+    }
 
-        # Make new message first line
-        if($firstLine.StartsWith($jiraItem))
-        {
-            $msg = $firstLine
-        }else {
-            $msg = "$jiraItem`: $firstLine"
-        }
+    # Make new message first line
+    if($firstLine.StartsWith($jiraItem))
+    {
+        $msg = $firstLine
+    }else {
+        $msg = "$jiraItem`: $firstLine"
+    }
         
-        # Add first line to message
-        if($isOneLine)
-        {
-            $newCommitMessage = $msg
-        }
-        else
-        {
-            $messageFileContent[0] = $msg
-            $newCommitMessage = $messageFileContent
-        }
-
-        # Write to file.
-        "Set-Content $commitFile $newCommitMessage"
+    # Add first line to message
+    if($isOneLine)
+    {
+        $newCommitMessage = $msg
     }
     else
     {
-        "Branch '$currentBranch' doesn't match JIRA item regex"
+        $messageFileContent[0] = $msg
+        $newCommitMessage = $messageFileContent
     }
-}
 
-com ".git\COMMIT_EDITMSG"
+    # Write to file.
+    Write-Host "Writing to file '$commitFile'"
+    Set-Content $commitFile $newCommitMessage
+}
+else
+{
+    Write-Host "Branch '$currentBranch' doesn't match JIRA item regex"
+}
