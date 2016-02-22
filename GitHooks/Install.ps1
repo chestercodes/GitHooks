@@ -1,4 +1,5 @@
-param([string] $repoRootDir)
+# This assumes that the Install file is in a folder called GitHooks at the root of the repo
+# It won't work if this isn't the case.
 
 function BackupFileIfExists($file)
 {
@@ -10,19 +11,17 @@ function BackupFileIfExists($file)
     }
 }
 
-$repoRootDir = "C:\Dev\GitHooks"
-
-$commitMsgFile = "$repoRootDir\.git\hooks\commit-msg"
-Write-Host "Commit-msg file is at $commitMsgFile"
-
-$gitHooksDir = (Get-Item -Path ($MyInvocation.MyCommand.Path)).Directory.FullName
-Write-Host "GitHooks folder is at $gitHooksDir"
+$installFile = (Get-Item -Path ($MyInvocation.MyCommand.Path))
+$gitHooksDir = $installFile.Directory
+$gitHooksDirFullName = $installFile.Directory.FullName
+Write-Host "GitHooks folder is at $gitHooksDirFullName"
+$repoDir = $gitHooksDir.Parent.FullName
+$commitMsgFile = "$repoDir\.git\hooks\commit-msg"
+Write-Host "commit-msg file is '$commitMsgFile'"
 
 BackupFileIfExists $commitMsgFile
 
-$commitReplaceScriptFile = "$gitHooksDir\CommitMessageReplace.ps1"
-
 # Was tempted to generate this file but git bash is super picky about encoding and stuff
 #  so just copy across
-$commitsMsgTemplate = "$gitHooksDir\commit-msg"
+$commitsMsgTemplate = "$gitHooksDirFullName\commit-msg"
 cp $commitsMsgTemplate $commitMsgFile
